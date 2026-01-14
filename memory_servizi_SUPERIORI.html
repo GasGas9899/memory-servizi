@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I servizi alla collettività</title>
+<style>
+:root{--card-w:130px;--card-h:95px;--gap:6px;}
+body{font-family:Arial,sans-serif;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;margin:0;padding:20px;}
+h1{margin:0 0 12px 0;}
+#game{display:grid;grid-template-columns:repeat(7,var(--card-w));grid-template-rows:repeat(6,var(--card-h));gap:var(--gap);justify-content:center;}
+.card{width:var(--card-w);height:var(--card-h);background:#1e3a5f;color:white;display:flex;justify-content:center;align-items:center;font-weight:bold;cursor:pointer;border-radius:8px;user-select:none;font-size:14px;text-align:center;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3);transition:.2s;text-transform:uppercase;}
+.card.orange{background:#d97706;}
+.card.flipped,.card.matched{background:#ecf2ff;color:#111;}
+.card.matched{background:#10b981;color:white;cursor:default;}
+#status{margin-top:12px;min-height:20px;}
+button{padding:6px 12px;border:none;border-radius:6px;background:#2563eb;color:white;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>I servizi alla collettività</h1>
+<button id="restartBtn">Ricomincia</button>
+<div id="game"></div>
+<div id="status"></div>
+
+<script>
+(()=>{
+const services=[
+"ISTRUZIONE","ISTRUZIONE",
+"SANITÀ","SANITÀ",
+"TRASPORTI","TRASPORTI",
+"SICUREZZA","SICUREZZA",
+"CULTURA","CULTURA",
+"PROTEZIONE DELL'AMBIENTE","PROTEZIONE DELL'AMBIENTE",
+"ECONOMIA E LAVORO","ECONOMIA E LAVORO",
+"CONTRIBUTO BILANCIO UE","CONTRIBUTO BILANCIO UE",
+"PREVIDENZA SOCIALE","PREVIDENZA SOCIALE",
+"ASSISTENZA SOCIALE","ASSISTENZA SOCIALE",
+"SPORT","SPORT",
+"RICERCA","RICERCA",
+"INFRASTRUTTURE","INFRASTRUTTURE",
+"TURISMO","TURISMO",
+"DIFESA","DIFESA"
+];
+const imposte = Array(12).fill("IMPOSTA");
+let cards=[...services,...imposte];
+
+const game=document.getElementById("game");
+const status=document.getElementById("status");
+let turned=[],lock=false;
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+}
+
+function build(){
+  game.innerHTML="";turned=[];lock=false;shuffle(cards);
+  cards.forEach((w,i)=>{
+    const c=document.createElement("div");
+    c.className="card"+(((Math.floor(i/7)+i)%2===0)?" orange":"");
+    c.dataset.word=w;
+    c.dataset.index=i;
+    c.textContent=i+1;
+    c.onclick=()=>flip(c);
+    game.appendChild(c);
+  });
+  status.textContent="Guarda le carte per 15 secondi...";
+  [...game.children].forEach(c=>{
+    c.classList.add("flipped");
+    c.textContent=c.dataset.word;
+  });
+  setTimeout(()=>{
+    [...game.children].forEach(c=>{
+      c.classList.remove("flipped");
+      c.textContent=parseInt(c.dataset.index)+1;
+    });
+    status.textContent="Inizia a giocare! Gira 3 carte a turno.";
+  },15000);
+}
+
+function flip(c){
+  if(lock||c.classList.contains("matched")||turned.includes(c))return;
+  c.classList.add("flipped");
+  c.textContent=c.dataset.word;
+  turned.push(c);
+  if(turned.length===3){
+    lock=true;
+    setTimeout(check,1000);
+  }
+}
+
+function check(){
+  const imp=turned.filter(c=>c.dataset.word==="IMPOSTA");
+  const serv=turned.filter(c=>c.dataset.word!=="IMPOSTA");
+  if(serv.length===2 && imp.length===1 && serv[0].dataset.word===serv[1].dataset.word){
+    [...serv,...imp].forEach(c=>c.classList.add("matched"));
+    status.textContent="Coppia conquistata: "+serv[0].dataset.word;
+  } else {
+    turned.forEach(c=>{
+      c.classList.remove("flipped");
+      c.textContent=parseInt(c.dataset.index)+1;
+    });
+    status.textContent="Turno non valido.";
+  }
+  turned=[];lock=false;
+}
+
+document.getElementById("restartBtn").onclick=build;
+build();
+})();
+</script>
+</body>
+</html>
